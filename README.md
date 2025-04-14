@@ -6,10 +6,6 @@ Almost **every** action is supported(except for undo/redo and replace mode), eve
 
 ![demo](demo/demo.gif)
 
-### Requirements
-
-The only requirement is that your shell(or REPL) must emit [OSC 133](https://gitlab.freedesktop.org/Per_Bothner/specifications/-/blob/master/proposals/semantic-prompts.md)
-
 ### Installation
 via lazy.nvim
 ```lua
@@ -19,4 +15,30 @@ via lazy.nvim
 }
 ```
 
-
+### Configuration
+By default the plugin only detects [OSC 133](https://gitlab.freedesktop.org/Per_Bothner/specifications/-/blob/master/proposals/semantic-prompts.md) promt lines but you can extend it to support REPLs that dont support OSC 133.
+```lua
+local editableterm = require('editable-term')  
+editableterm.setup({
+    promts = {
+        ['^%(gdb%) '] = {}, -- gdb promt
+        ['^... '] = {},     -- python PS1
+        ['^>>> '] = {},     -- python PS2
+        ['some_other_prompt'] = {
+            keybinds = {
+                clear_current_line = 'keys to clear the line',   
+                goto_line_start = 'keys to goto line start',   
+                clear_current_line = 'keys to move forward one character',   
+            }
+        },
+    },
+})
+```
+#### Default keybinds
+```lua
+{
+    clear_current_line = '<C-e><C-u>',
+    forward_char = '<C-f>',
+    goto_line_start = '<C-a>',
+}
+```

@@ -1,93 +1,121 @@
 local M = {}
+local function term_codes(keys)
+    return vim.api.nvim_replace_termcodes(keys, true, false, true)
+end
 local function update_line(buf, chan, ln)
     local bufinfo = M.buffers[buf]
     if not bufinfo.promt_cursor then
         return
     end
-    vim.fn.chansend(chan, vim.api.nvim_replace_termcodes('<C-U>', true, false, true))
+    vim.fn.chansend(chan, term_codes(bufinfo.keybinds.clear_current_line))
     local line = ln or vim.api.nvim_get_current_line()
     vim.fn.chansend(chan, line:sub(bufinfo.promt_cursor[2] + 1))
     local cursor = vim.api.nvim_win_get_cursor(0)
-    local p = vim.api.nvim_replace_termcodes('<C-a>', true, false, true) ..
-    vim.fn['repeat'](vim.api.nvim_replace_termcodes('<C-f>', true, false, true), cursor[2] - bufinfo.promt_cursor[2])
+    local p = term_codes(bufinfo.keybinds.goto_line_start) ..
+        vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
+            cursor[2] - bufinfo.promt_cursor[2])
     vim.fn.chansend(chan, p)
     M.buffers[buf].waiting = true
     vim.defer_fn(function()
         M.buffers[buf].waiting = false
     end, 50)
 end
-local function get_term_cursor() 
+local function get_term_cursor()
     local prevcursor = vim.api.nvim_win_get_cursor(0)
     vim.api.nvim_feedkeys('i', 'x', false)
-    vim.schedule(function ()
+    vim.schedule(function()
         local cursor = vim.api.nvim_win_get_cursor(0)
         vim.api.nvim_input('<C-\\><C-N>')
     end)
-end 
+end
 local function set_term_cursor(cursor)
     local bufinfo = M.buffers[vim.api.nvim_get_current_buf()]
-    local p = vim.api.nvim_replace_termcodes('<C-a>', true, false, true) ..
-    vim.fn['repeat'](vim.api.nvim_replace_termcodes('<C-f>', true, false, true), cursor - bufinfo.promt_cursor[2])
+    local p = term_codes(bufinfo.keybinds.goto_line_start) ..
+        vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
+            cursor - bufinfo.promt_cursor[2])
     vim.fn.chansend(vim.bo.channel, p)
 end
-M.setup = function()
+
+---@class Promt
+---@field keybinds? Keybinds
+
+---@class Keybinds
+---@field clear_current_line string
+---@field forward_char string
+---@field goto_line_start string
+
+---@class EditableTermConfig
+---@field default_keybinds? Keybinds
+---@field promts? {[string]: Promt}
+
+---@param config EditableTermConfig
+M.setup = function(config)
     M.buffers = {}
+    M.promts = (config or {}).promts
+    M.default_keybinds = (config or {}).default_keybinds or {
+        clear_current_line = '<C-e><C-u>',
+        forward_char = '<C-f>',
+        goto_line_start = '<C-a>',
+    }
     vim.api.nvim_create_autocmd('TermOpen', {
         group = vim.api.nvim_create_augroup('editable-term', { clear = true }),
         callback = function(args)
             local editgroup = vim.api.nvim_create_augroup('editable-term-text-change', { clear = true })
-            M.buffers[args.buf] = { leaving_term = true }
+            M.buffers[args.buf] = { leaving_term = true, keybinds = M.default_keybinds }
             vim.keymap.set('n', 'A', function()
                 local bufinfo = M.buffers[args.buf]
                 local line = vim.api.nvim_get_current_line()
                 line = line:sub(bufinfo.promt_cursor[2])
                 local start, ent = line:find('%s*$')
-                local p = vim.api.nvim_replace_termcodes('<C-a>', true, false, true) ..
-                vim.fn['repeat'](vim.api.nvim_replace_termcodes('<C-f>', true, false, true), start - 2)
+                local p = term_codes(bufinfo.keybinds.goto_line_start) ..
+                    vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
+                        start - 2)
                 vim.fn.chansend(vim.bo.channel, p)
                 vim.cmd [[ startinsert ]]
-            end, {buffer = args.buf})
+            end, { buffer = args.buf })
             vim.keymap.set('n', 'I', function()
                 local line = vim.api.nvim_get_current_line()
                 local bufinfo = M.buffers[args.buf]
                 line = line:sub(bufinfo.promt_cursor[2])
                 local _, ent = line:find('[^%s]')
-                local p = vim.api.nvim_replace_termcodes('<C-a>', true, false, true) ..
-                vim.fn['repeat'](vim.api.nvim_replace_termcodes('<C-f>', true, false, true), ent - 2)
+                local p = term_codes(bufinfo.keybinds.goto_line_start) ..
+                    vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
+                        ent - 2)
                 vim.fn.chansend(vim.bo.channel, p)
                 vim.cmd [[ startinsert ]]
-            end, {buffer = args.buf})
+            end, { buffer = args.buf })
             vim.keymap.set('n', 'i', function()
                 local line = vim.api.nvim_get_current_line()
                 local cursor = vim.api.nvim_win_get_cursor(0)
                 set_term_cursor(cursor[2])
                 vim.cmd [[ startinsert ]]
-            end, {buffer = args.buf})
+            end, { buffer = args.buf })
             vim.keymap.set('n', 'a', function()
+                local bufinfo = M.buffers[args.buf]
                 local line = vim.api.nvim_get_current_line()
-                local start, ent = line:find('%$ ')
-                if not ent then
-                    ent = 0
-                end
                 local cursor = vim.api.nvim_win_get_cursor(0)
-                local p = vim.api.nvim_replace_termcodes('<C-a>', true, false, true) ..
-                vim.fn['repeat'](vim.api.nvim_replace_termcodes('<C-f>', true, false, true), cursor[2] + 1 - ent)
+                local p = term_codes(bufinfo.keybinds.goto_line_start) ..
+                    vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
+                        cursor[2] - bufinfo.promt_cursor[2] + 1)
                 vim.fn.chansend(vim.bo.channel, p)
                 vim.cmd [[ startinsert ]]
-            end, {buffer = args.buf})
+            end, { buffer = args.buf })
             vim.keymap.set('n', 'dd', function()
-                M.buffers[args.buf].leaving_term = true 
-                vim.fn.chansend(vim.bo.channel, vim.api.nvim_replace_termcodes('<C-U><C-A>', true, false, true))
+                local bufinfo = M.buffers[args.buf]
+                bufinfo.leaving_term = true
+                vim.fn.chansend(vim.bo.channel,
+                    vim.api.nvim_replace_termcodes(
+                        bufinfo.keybinds.clear_current_line .. bufinfo.keybinds.goto_line_start, true, false, true))
                 set_term_cursor(0)
-            end)
+            end, {buffer = args.buf})
             vim.api.nvim_create_autocmd('TextYankPost', {
                 group = editgroup,
                 buffer = args.buf,
                 callback = function(args)
-                    local start = vim.api.nvim_buf_get_mark(args.buf, '[') 
-                    local ent = vim.api.nvim_buf_get_mark(args.buf, ']') 
+                    local start = vim.api.nvim_buf_get_mark(args.buf, '[')
+                    local ent = vim.api.nvim_buf_get_mark(args.buf, ']')
                     if start[1] ~= ent[1] then
-                        vim.fn.chansend(vim.bo.channel, vim.api.nvim_replace_termcodes('<C-C>', true, false, true))
+                        vim.fn.chansend(vim.bo.channel, term_codes('<C-C>'))
                     elseif vim.v.event.operator == 'c' then
                         local line = vim.api.nvim_get_current_line()
                         line = line:sub(1, start[2]) .. line:sub(ent[2] + 2)
@@ -112,7 +140,22 @@ M.setup = function()
                 group = editgroup,
                 buffer = args.buf,
                 callback = function(args)
-                    M.buffers[args.buf].leaving_term = true
+                    local bufinfo = M.buffers[args.buf]
+                    bufinfo.leaving_term = true
+                    local ln = vim.api.nvim_get_current_line()
+                    line_num = vim.api.nvim_win_get_cursor(0)[1]
+                    if M.promts ~= nil and ln ~= nil then
+                        for pattern, promt in pairs(M.promts) do
+                            start, ent = ln:find(pattern)
+                            if start ~= nil then
+                                if ((bufinfo.promt_cursor or {})[1] or 0) < line_num then
+                                    bufinfo.promt_cursor = { line_num, ent }
+                                    bufinfo.keybinds = promt.keybinds or M.default_keybinds
+                                    break
+                                end
+                            end
+                        end
+                    end
                 end
             })
             vim.api.nvim_create_autocmd('TermRequest', {

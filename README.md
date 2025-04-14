@@ -2,7 +2,7 @@
 
 ### This plugin allows you to edit terminal promt as if it was a regular buffer.  
 
-Almost **every** action is supported(except for undo/redo), even actions from plugins such as 'ds' from [nvim-surround](https://github.com/kylechui/nvim-surround)
+Almost **every** action is supported(except for undo/redo and replace mode), even actions from plugins such as 'ds' from [nvim-surround](https://github.com/kylechui/nvim-surround)
 
 ![demo](demo/demo.gif)
 

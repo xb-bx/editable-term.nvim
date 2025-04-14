@@ -28,7 +28,7 @@ editableterm.setup({
             keybinds = {
                 clear_current_line = 'keys to clear the line',   
                 goto_line_start = 'keys to goto line start',   
-                clear_current_line = 'keys to move forward one character',   
+                forward_char = 'keys to move forward one character',   
             }
         },
     },

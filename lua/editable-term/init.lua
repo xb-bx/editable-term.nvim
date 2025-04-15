@@ -4,13 +4,13 @@ local function term_codes(keys)
 end
 local function update_line(buf, chan, ln)
     local bufinfo = M.buffers[buf]
-    if not bufinfo.promt_cursor then
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    if not bufinfo.promt_cursor or cursor[1] ~= bufinfo.promt_cursor[1] then
         return
     end
     vim.fn.chansend(chan, term_codes(bufinfo.keybinds.clear_current_line))
     local line = ln or vim.api.nvim_get_current_line()
     vim.fn.chansend(chan, line:sub(bufinfo.promt_cursor[2] + 1))
-    local cursor = vim.api.nvim_win_get_cursor(0)
     local p = term_codes(bufinfo.keybinds.goto_line_start) ..
         vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
             cursor[2] - bufinfo.promt_cursor[2])

@@ -43,13 +43,9 @@ editableterm.setup({
 }
 ```
 ### Enable shell's vi-mode only when not in nvim 
-add following to your init.lua
-```lua
-vim.env['IS_NVIM_TERM']='1'
-```
 add following to your shell's rc file
 ```sh
-if ! [ "$IS_NVIM_TERM" = "1" ]; then
+if [ -z "$NVIM" ]; then
     set -o vi
 fi
 ```

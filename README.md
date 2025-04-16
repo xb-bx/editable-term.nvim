@@ -22,8 +22,8 @@ local editableterm = require('editable-term')
 editableterm.setup({
     promts = {
         ['^%(gdb%) '] = {}, -- gdb promt
-        ['^... '] = {},     -- python PS1
-        ['^>>> '] = {},     -- python PS2
+        ['^>>> '] = {},     -- python PS1
+        ['^... '] = {},     -- python PS2
         ['some_other_prompt'] = {
             keybinds = {
                 clear_current_line = 'keys to clear the line',   

@@ -6,6 +6,10 @@ Almost **every** action is supported(except for undo/redo and replace mode), eve
 
 ![demo](demo/demo.gif)
 
+### Requirements
+- Neovim 0.11+
+
+
 ### Installation
 via lazy.nvim
 ```lua

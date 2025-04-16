@@ -64,40 +64,44 @@ M.setup = function(config)
             M.buffers[args.buf] = { leaving_term = true, keybinds = M.default_keybinds }
             vim.keymap.set('n', 'A', function()
                 local bufinfo = M.buffers[args.buf]
-                local line = vim.api.nvim_get_current_line()
-                line = line:sub(bufinfo.promt_cursor[2])
-                local start, ent = line:find('%s*$')
-                local p = term_codes(bufinfo.keybinds.goto_line_start) ..
-                    vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
-                        start - 2)
-                vim.fn.chansend(vim.bo.channel, p)
+                if bufinfo.promt_cursor then
+                  local line = vim.api.nvim_get_current_line()
+                  line = line:sub(bufinfo.promt_cursor[2])
+                  local start, _ = line:find('%s*$')
+                  local p = term_codes(bufinfo.keybinds.goto_line_start) ..
+                      vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
+                          start - 2)
+                  vim.fn.chansend(vim.bo.channel, p)
+                end
                 vim.cmd [[ startinsert ]]
             end, { buffer = args.buf })
             vim.keymap.set('n', 'I', function()
                 local line = vim.api.nvim_get_current_line()
                 local bufinfo = M.buffers[args.buf]
-                line = line:sub(bufinfo.promt_cursor[2])
-                local _, ent = line:find('[^%s]')
-                local p = term_codes(bufinfo.keybinds.goto_line_start) ..
-                    vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
-                        ent - 2)
-                vim.fn.chansend(vim.bo.channel, p)
+                if bufinfo.promt_cursor then
+                  line = line:sub(bufinfo.promt_cursor[2])
+                  local _, ent = line:find('[^%s]')
+                  local p = term_codes(bufinfo.keybinds.goto_line_start) ..
+                      vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
+                          ent - 2)
+                  vim.fn.chansend(vim.bo.channel, p)
+                end
                 vim.cmd [[ startinsert ]]
             end, { buffer = args.buf })
             vim.keymap.set('n', 'i', function()
-                local line = vim.api.nvim_get_current_line()
                 local cursor = vim.api.nvim_win_get_cursor(0)
                 set_term_cursor(cursor[2])
                 vim.cmd [[ startinsert ]]
             end, { buffer = args.buf })
             vim.keymap.set('n', 'a', function()
                 local bufinfo = M.buffers[args.buf]
-                local line = vim.api.nvim_get_current_line()
-                local cursor = vim.api.nvim_win_get_cursor(0)
-                local p = term_codes(bufinfo.keybinds.goto_line_start) ..
-                    vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
-                        cursor[2] - bufinfo.promt_cursor[2] + 1)
-                vim.fn.chansend(vim.bo.channel, p)
+                if bufinfo.promt_cursor then
+                  local cursor = vim.api.nvim_win_get_cursor(0)
+                  local p = term_codes(bufinfo.keybinds.goto_line_start) ..
+                      vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
+                          cursor[2] - bufinfo.promt_cursor[2] + 1)
+                  vim.fn.chansend(vim.bo.channel, p)
+                end
                 vim.cmd [[ startinsert ]]
             end, { buffer = args.buf })
             vim.keymap.set('n', 'dd', function()

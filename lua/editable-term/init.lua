@@ -18,7 +18,7 @@ local function update_line(buf, chan, ln)
     M.buffers[buf].waiting = true
     vim.defer_fn(function()
         M.buffers[buf].waiting = false
-    end, 50)
+    end, M.wait_for_keys_delay)
 end
 local function get_term_cursor()
     local prevcursor = vim.api.nvim_win_get_cursor(0)
@@ -47,6 +47,7 @@ end
 ---@class EditableTermConfig
 ---@field default_keybinds? Keybinds
 ---@field promts? {[string]: Promt}
+---@field wait_for_keys_delay integer
 
 ---@param config EditableTermConfig
 M.setup = function(config)
@@ -57,6 +58,7 @@ M.setup = function(config)
         forward_char = '<C-f>',
         goto_line_start = '<C-a>',
     }
+    M.wait_for_keys_delay = (config or {}).wait_for_keys_delay or 50
     vim.api.nvim_create_autocmd('TermOpen', {
         group = vim.api.nvim_create_augroup('editable-term', { clear = true }),
         callback = function(args)

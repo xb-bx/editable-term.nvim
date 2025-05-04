@@ -36,6 +36,7 @@ editableterm.setup({
             }
         },
     },
+    wait_for_keys_delay = 50, -- amount of miliseconds to wait for shell to process keys 
 })
 ```
 #### Default keybinds

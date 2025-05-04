@@ -18,7 +18,7 @@ local function update_line(buf, chan, ln)
     M.buffers[buf].waiting = true
     vim.defer_fn(function()
         M.buffers[buf].waiting = false
-    end, 50)
+    end, M.wait_for_keys_delay)
 end
 local function get_term_cursor()
     local prevcursor = vim.api.nvim_win_get_cursor(0)
@@ -47,6 +47,7 @@ end
 ---@class EditableTermConfig
 ---@field default_keybinds? Keybinds
 ---@field promts? {[string]: Promt}
+---@field wait_for_keys_delay integer
 
 ---@param config EditableTermConfig
 M.setup = function(config)
@@ -57,10 +58,12 @@ M.setup = function(config)
         forward_char = '<C-f>',
         goto_line_start = '<C-a>',
     }
+    M.wait_for_keys_delay = (config or {}).wait_for_keys_delay or 50
     vim.api.nvim_create_autocmd('TermOpen', {
-        group = vim.api.nvim_create_augroup('editable-term', { clear = true }),
+        pattern = 'term://*',
+        group = vim.api.nvim_create_augroup('editable-term', {}),
         callback = function(args)
-            local editgroup = vim.api.nvim_create_augroup('editable-term-text-change', { clear = true })
+            local editgroup = vim.api.nvim_create_augroup('editable-term-text-change', {})
             M.buffers[args.buf] = { leaving_term = true, keybinds = M.default_keybinds }
             vim.keymap.set('n', 'A', function()
                 local bufinfo = M.buffers[args.buf]
@@ -111,10 +114,10 @@ M.setup = function(config)
                     vim.api.nvim_replace_termcodes(
                         bufinfo.keybinds.clear_current_line .. bufinfo.keybinds.goto_line_start, true, false, true))
                 set_term_cursor(0)
-            end, {buffer = args.buf})
+            end, { buffer = args.buf })
             vim.api.nvim_create_autocmd('TextYankPost', {
+                pattern = 'term://*',
                 group = editgroup,
-                buffer = args.buf,
                 callback = function(args)
                     local start = vim.api.nvim_buf_get_mark(args.buf, '[')
                     local ent = vim.api.nvim_buf_get_mark(args.buf, ']')
@@ -124,12 +127,16 @@ M.setup = function(config)
                         local line = vim.api.nvim_get_current_line()
                         line = line:sub(1, start[2]) .. line:sub(ent[2] + 2)
                         update_line(args.buf, vim.bo.channel, line)
-                        set_term_cursor(start[2])
+                        if start[1] == ent[1] and start[2] == ent[2] then
+                            set_term_cursor(start[2] - 1)
+                        else 
+                            set_term_cursor(start[2])
+                        end
                     end
                 end
             })
             vim.api.nvim_create_autocmd('TextChanged', {
-                buffer = args.buf,
+                pattern = 'term://*',
                 group = editgroup,
                 callback = function(args)
                     local bufinfo = M.buffers[args.buf]
@@ -141,13 +148,13 @@ M.setup = function(config)
                 end
             })
             vim.api.nvim_create_autocmd('TermLeave', {
+                pattern = 'term://*',
                 group = editgroup,
-                buffer = args.buf,
                 callback = function(args)
                     local bufinfo = M.buffers[args.buf]
                     bufinfo.leaving_term = true
                     local ln = vim.api.nvim_get_current_line()
-                    line_num = vim.api.nvim_win_get_cursor(0)[1]
+                    local line_num = vim.api.nvim_win_get_cursor(0)[1]
                     if M.promts ~= nil and ln ~= nil then
                         for pattern, promt in pairs(M.promts) do
                             start, ent = ln:find(pattern)
@@ -164,7 +171,6 @@ M.setup = function(config)
             })
             vim.api.nvim_create_autocmd('TermRequest', {
                 group = editgroup,
-                buffer = args.buf,
                 callback = function(args)
                     if string.match(args.data.sequence, '^\027]133;B') then
                         M.buffers[args.buf].promt_cursor = args.data.cursor
@@ -172,8 +178,8 @@ M.setup = function(config)
                 end,
             })
             vim.api.nvim_create_autocmd('CursorMoved', {
+                pattern = 'term://*',
                 group = editgroup,
-                buffer = args.buf,
                 callback = function(args)
                     local cursor = vim.api.nvim_win_get_cursor(0)
                     local bufinfo = M.buffers[args.buf]

@@ -60,7 +60,7 @@ M.setup = function(config)
     }
     M.wait_for_keys_delay = (config or {}).wait_for_keys_delay or 50
     vim.api.nvim_create_autocmd('TermOpen', {
-        group = vim.api.nvim_create_augroup('editable-term', { clear = true }),
+        group = vim.api.nvim_create_augroup('editable-term', {}),
         callback = function(args)
             local editgroup = vim.api.nvim_create_augroup('editable-term-text-change', { clear = true })
             M.buffers[args.buf] = { leaving_term = true, keybinds = M.default_keybinds }

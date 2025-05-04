@@ -124,7 +124,11 @@ M.setup = function(config)
                         local line = vim.api.nvim_get_current_line()
                         line = line:sub(1, start[2]) .. line:sub(ent[2] + 2)
                         update_line(args.buf, vim.bo.channel, line)
-                        set_term_cursor(start[2])
+                        if start[1] == ent[1] and start[2] == ent[2] then
+                            set_term_cursor(start[2] - 1)
+                        else 
+                            set_term_cursor(start[2])
+                        end
                     end
                 end
             })

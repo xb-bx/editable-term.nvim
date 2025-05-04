@@ -62,7 +62,7 @@ M.setup = function(config)
     vim.api.nvim_create_autocmd('TermOpen', {
         group = vim.api.nvim_create_augroup('editable-term', {}),
         callback = function(args)
-            local editgroup = vim.api.nvim_create_augroup('editable-term-text-change', { clear = true })
+            local editgroup = vim.api.nvim_create_augroup('editable-term-text-change'..args.buf, {clear = true})
             M.buffers[args.buf] = { leaving_term = true, keybinds = M.default_keybinds }
             vim.keymap.set('n', 'A', function()
                 local bufinfo = M.buffers[args.buf]
@@ -175,6 +175,13 @@ M.setup = function(config)
                     if string.match(args.data.sequence, '^\027]133;B') then
                         M.buffers[args.buf].promt_cursor = args.data.cursor
                     end
+                end,
+            })
+            vim.api.nvim_create_autocmd('BufDelete', {
+                group = editgroup,
+                buffer = args.buf,
+                callback = function (args)
+                    vim.api.nvim_del_augroup_by_id(editgroup) 
                 end,
             })
             vim.api.nvim_create_autocmd('CursorMoved', {

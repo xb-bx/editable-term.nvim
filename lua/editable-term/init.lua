@@ -67,8 +67,9 @@ M.setup = function(config)
             vim.keymap.set('n', 'A', function()
                 local bufinfo = M.buffers[args.buf]
                 if bufinfo.promt_cursor then
-                  local line = vim.api.nvim_get_current_line()
-                  line = line:sub(bufinfo.promt_cursor[2])
+                  local cursor_row, cursor_col = unpack(bufinfo.promt_cursor)
+                  local line = vim.api.nvim_buf_get_lines(args.buf, cursor_row - 1, cursor_row, false)[1]
+                  line = line:sub(cursor_col)
                   local start, _ = line:find('%s*$')
                   local p = term_codes(bufinfo.keybinds.goto_line_start) ..
                       vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),
@@ -78,10 +79,11 @@ M.setup = function(config)
                 vim.cmd [[ startinsert ]]
             end, { buffer = args.buf })
             vim.keymap.set('n', 'I', function()
-                local line = vim.api.nvim_get_current_line()
                 local bufinfo = M.buffers[args.buf]
                 if bufinfo.promt_cursor then
-                  line = line:sub(bufinfo.promt_cursor[2])
+                  local cursor_row, cursor_col = unpack(bufinfo.promt_cursor)
+                  local line = vim.api.nvim_buf_get_lines(args.buf, cursor_row - 1, cursor_row, false)[1]
+                  line = line:sub(cursor_col)
                   local _, ent = line:find('[^%s]')
                   local p = term_codes(bufinfo.keybinds.goto_line_start) ..
                       vim.fn['repeat'](term_codes(bufinfo.keybinds.forward_char),

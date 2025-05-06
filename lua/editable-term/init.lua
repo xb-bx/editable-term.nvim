@@ -153,7 +153,9 @@ M.setup = function(config)
                     local bufinfo = M.buffers[args.buf]
                     bufinfo.leaving_term = true
                     local ln = vim.api.nvim_get_current_line()
-                    line_num = vim.api.nvim_win_get_cursor(0)[1]
+                    local cursor = vim.api.nvim_win_get_cursor(0)
+                    vim.api.nvim_win_set_cursor(0, cursor);
+                    line_num = cursor[1]
                     if M.promts ~= nil and ln ~= nil then
                         for pattern, promt in pairs(M.promts) do
                             start, ent = ln:find(pattern)

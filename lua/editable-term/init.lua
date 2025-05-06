@@ -174,11 +174,9 @@ M.setup = function(config)
                         for pattern, promt in pairs(M.promts) do
                             start, ent = ln:find(pattern)
                             if start ~= nil then
-                                if ((bufinfo.promt_cursor or {})[1] or 0) < line_num then
-                                    bufinfo.promt_cursor = { line_num, ent }
-                                    bufinfo.keybinds = promt.keybinds or M.default_keybinds
-                                    break
-                                end
+                                bufinfo.promt_cursor = { line_num, ent }
+                                bufinfo.keybinds = promt.keybinds or M.default_keybinds
+                                break
                             end
                         end
                     end

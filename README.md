@@ -45,6 +45,7 @@ editableterm.setup({
     clear_current_line = '<C-e><C-u>',
     forward_char = '<C-f>',
     goto_line_start = '<C-a>',
+    goto_line_start = '<C-e>',
 }
 ```
 ### Enable shell's vi-mode only when not in nvim 
